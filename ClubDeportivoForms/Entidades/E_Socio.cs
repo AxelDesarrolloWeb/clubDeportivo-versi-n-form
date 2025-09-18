@@ -8,33 +8,58 @@ namespace ClubDeportivoForms.Entidades
 {
     public class E_Socio 
     {
-        // Propiedades
+        // Propiedades básicas
         public int IDSocio { get; set; }
         public string? NombreS { get; set; }
         public string? ApellidoS { get; set; }
         public int? DocS { get; set; }
-        public int asociarse { get; set; }
-        
-        // Propiedad para almacenar la fecha de vencimiento
+        public bool EstaActivo { get; set; }  // Para saber si el socio está activo
         public DateTime? FechaVencimientoCuota { get; set; }
+        public List<Actividad> ActividadesInscritas { get; private set; } = new List<Actividad>();
 
-        // Método para verificar el vencimiento de la cuota
-        public DateTime VerVencimientoCuota()
+        // Método para inscribirse a una actividad
+        public void InscribirEnActividad(Actividad actividad)
         {
-            if (!FechaVencimientoCuota.HasValue)
+            if (actividad == null)
             {
-                throw new InvalidOperationException("No se ha establecido una fecha de vencimiento para este socio.");
+                throw new ArgumentNullException(nameof(actividad), "La actividad no puede ser nula");
             }
-            return FechaVencimientoCuota.Value;
+
+            if (EstaActivo && FechaVencimientoCuota.HasValue && FechaVencimientoCuota > DateTime.Now)
+            {
+                ActividadesInscritas.Add(actividad);
+                // Aquí podría agregar lógica adicional, como notificar al sistema de la inscripción
+            }
+            else
+            {
+                throw new InvalidOperationException("El socio no puede inscribirse: cuota vencida o socio inactivo");
+            }
         }
 
-        // Opcional: Método para verificar si la cuota está vencida
-        public bool CuotaVencida()
+        // Método para verificar si el socio está inscripto en una actividad específica
+        public bool EstaInscriptoEnActividad(int idActividad)
         {
-            if (!FechaVencimientoCuota.HasValue)
-                return true; // Si no tiene fecha de vencimiento, se considera vencida
-                
-            return FechaVencimientoCuota.Value < DateTime.Now;
+            return ActividadesInscritas.Any(a => a.Id == idActividad);
+        }
+
+        // Método para verificar si la cuota está vencida
+        public bool TieneCuotaVencida()
+        {
+            return !FechaVencimientoCuota.HasValue || FechaVencimientoCuota < DateTime.Now;
+        }
+
+        // Método para renovar la cuota
+        public void RenovarCuota(int meses = 1)
+        {
+            if (meses <= 0)
+                throw new ArgumentException("El número de meses debe ser mayor a cero", nameof(meses));
+
+            var fechaBase = FechaVencimientoCuota > DateTime.Now 
+                ? FechaVencimientoCuota.Value 
+                : DateTime.Now;
+
+            FechaVencimientoCuota = fechaBase.AddMonths(meses);
+            EstaActivo = true;
         }
     }
 }
