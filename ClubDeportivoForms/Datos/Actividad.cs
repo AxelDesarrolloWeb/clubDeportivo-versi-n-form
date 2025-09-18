@@ -141,7 +141,5 @@ namespace ClubDeportivoForms.Datos {
                 return precio;
             }
         }
-
-
     }
 }
